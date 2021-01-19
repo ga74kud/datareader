@@ -1,7 +1,6 @@
-from source.preprocessing.dataprocessing import *
 import argparse
 import definitions
-
+from __init__ import *
 
 def main():
     parser = argparse.ArgumentParser()
@@ -15,10 +14,7 @@ def main():
                         required=False)
     args = parser.parse_args()
     params = vars(args)
-    params['PROJECT_ROOT'] = definitions.get_project_root()
-    obj=dataprocessing(params)
-    a=obj.dataset
-    None
+    params['PROJECT_ROOT'] = definitions.get_project_root_pkg()
 
 if __name__ == '__main__':
     main()

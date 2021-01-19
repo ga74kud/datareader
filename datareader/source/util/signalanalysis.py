@@ -1,8 +1,4 @@
-# code found https://dsp.stackexchange.com/questions/9498/have-position-want-to-calculate-velocity-and-acceleration
-# 12. October 2019
 
-# Example Usage:
-# python sg.py position.dat 7 2
 
 import math
 import sys
@@ -14,6 +10,12 @@ from scipy.signal import savgol_filter
 import _pickle as cPickle
 def sg_filter(x, m, k=0):
     """
+    code found https://dsp.stackexchange.com/questions/9498/have-position-want-to-calculate-velocity-and-acceleration
+    12. October 2019
+
+    Example Usage:
+    python sg.py position.dat 7 2
+
     x = Vector of sample times
     m = Order of the smoothing polynomial
     k = Which derivative
@@ -27,7 +29,13 @@ def sg_filter(x, m, k=0):
     return Ai[k]
 
 def smooth(x, y, size=5, order=2, deriv=0):
+    """
+        code found https://dsp.stackexchange.com/questions/9498/have-position-want-to-calculate-velocity-and-acceleration
+        12. October 2019
 
+        Example Usage:
+        python sg.py position.dat 7 2
+    """
     if deriv > order:
         raise AssertionError
 

@@ -1,14 +1,16 @@
-from source.util.signalanalysis import *
-from source.util.helpfunctions import *
-
+from datareader.source.util.signalanalysis import *
+from datareader.source.util.helpfunctions import *
+import os
 from pathlib import Path
 
 
 class dataprocessing(object):
     def __init__(self, params, **kwargs):
         self.ROOT_DIR = str(params['PROJECT_ROOT'])
+
+    def test(self, params):
         self.file_path = self.readInputDataTxt()
-        self.dataset = self.readDataset()
+        self.dataset = self.readDataset(params)
         #param2DataFrame = gettingAlgorithmicParams(self.ROOT_DIR)
         # self.dataDict=self.computeDataDict(params, param2DataFrame)
         self.dataset = self.datasetWithProcessing(params)
@@ -33,10 +35,9 @@ class dataprocessing(object):
         file_path = data_path + 'annotations.txt'
         return file_path
 
-    def readDataset(self):
-        print(self.file_path)
-        df = pd.read_csv(self.file_path, sep=" ", header=None,
-                         names=['id', 'xmin', 'ymin', 'xmax', 'ymax', 't', 'a2', 'a3', 'a4', 'label'])
+    def readDataset(self, path):
+        df = pd.read_csv(path, sep=" ", header=None,
+                         names=['id', 'xmin', 'ymin', 'xmax', 'ymax', 't', 'lost', 'occluded', 'generated', 'label'])
         # data = pd.read_csv(self.file_path, header=None)
         return df
 
