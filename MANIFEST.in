@@ -1,4 +1,4 @@
 include datareader/data/input/stanford/bookstore/video0/annotations.txt
 include datareader/data/input/stanford/bookstore/video0/reference.jpg
-include *.txt
-recursive-include /home/michael/PycharmProjects/datareader/data *.txt *.py *.md
+recursive-include datareader/data/input/stanford *.txt *.py *.md *.jpg
+

@@ -1,13 +1,29 @@
+# -------------------------------------------------------------
+# code developed by Michael Hartmann during his Ph.D.
+# Data Processing: Pre-Processing
+#
+# (C) 2021 Michael Hartmann, Graz, Austria
+# Released under GNU GENERAL PUBLIC LICENSE
+# email michael.hartmann@v2c2.at
+# -------------------------------------------------------------
+
 from datareader.source.util.signalanalysis import *
 from datareader.source.util.helpfunctions import *
 import os
 from pathlib import Path
 
+'''
+Class dataprocessing:
 
+A) IDEA: Get datasets like Stanford Drone Dataset and provide functionality for data-processing
+'''
 class dataprocessing(object):
     def __init__(self, params, **kwargs):
         self.ROOT_DIR = str(params['PROJECT_ROOT'])
 
+    '''
+    Test-function
+    '''
     def test(self, params):
         self.file_path = self.readInputDataTxt()
         self.dataset = self.readDataset(params)
@@ -15,38 +31,28 @@ class dataprocessing(object):
         # self.dataDict=self.computeDataDict(params, param2DataFrame)
         self.dataset = self.datasetWithProcessing(params)
         self.extremePositions = self.getExtrema()
-
-    def getExtrema(self):
-        xmin, xmax, ymin, ymax = computeExtrema(self.dataset)
+    """
+        get the extrema of the whole dataset
+    """
+    def getExtrema(self, dataset):
+        xmin, xmax, ymin, ymax = computeExtrema(dataset)
         extremePositions = {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax}
 
         return extremePositions
 
-    def get_project_root(self):
-        """Returns project root folder."""
-        return Path(__file__).parent.parent.parent
-
-    def selectFilePath(self):
-        returnPath = str(self.ROOT_DIR) + "/data/input/stanford/bookstore/video0/"
-        return returnPath
-
-    def readInputDataTxt(self):
-        data_path = self.selectFilePath()
-        file_path = data_path + 'annotations.txt'
-        return file_path
-
+    """
+        get the whole dataset depending on the path variable and get a pandas variable back
+    """
     def readDataset(self, path):
         df = pd.read_csv(path, sep=" ", header=None,
                          names=['id', 'xmin', 'ymin', 'xmax', 'ymax', 't', 'lost', 'occluded', 'generated', 'label'])
         # data = pd.read_csv(self.file_path, header=None)
         return df
 
-    def getOutputDataPath(self, name):
-        filepath = str(self.ROOT_DIR) + "/data/output/" + name
-        return filepath
+    """
+        get the whole dataset depending on the path variable and get a pandas variable back
+    """
 
-    def datasetWithProcessing(self, params):
-        knowledgeDataset = getSignalFromMultipleSources(self.dataset, params)
+    def preprocessing_dataset(self, params, dataset):
+        knowledgeDataset = get_velocity_acceleration_for_dataset_2D(dataset, params)
         return knowledgeDataset
-
-# print(a.dataDict['xcent'])
