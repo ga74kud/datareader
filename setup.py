@@ -27,7 +27,7 @@ def package_files(directory):
 extra_files = package_files('./datareader/data')
 
 setup(name='datareader',
-      version='0.0.7',
+      version='0.0.8',
       description='Data reader',
       long_description=long_description,
       long_description_content_type="text/markdown",

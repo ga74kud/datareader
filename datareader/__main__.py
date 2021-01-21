@@ -12,6 +12,9 @@ import definitions
 from __init__ import *
 import logging
 def test():
+    #############################
+    ###     initial steps     ###
+    #############################
     params=get_params()
     path = datareader.__path__[0]
     location="bookstore"
@@ -31,7 +34,7 @@ def test():
     ##############################
     ### get velocity by filter ###
     ##############################
-    Z = get_velocity_for_dataset_2D(Y, params)
+    Z = get_velocity_for_dataset_2D(X, params)
     logging.info(Z)
     ##################################
     ### zonotype of a specific row ###
@@ -57,7 +60,15 @@ def test():
     ###############################################
     img = read_background_picture(image_path)
     img=plot_rectangle_for_timestamp(img, Y, 8524)
-    show_and_hold("", img)
+    #show_and_hold("", img)
+    #############################################
+    ### get all initial states from timestamp ###
+    #############################################
+    ###########################################
+    ### get all future rectangles of agents ###
+    ###########################################
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--window_x', '-wix', type=int, help='windowsize in x-direction for savgol_filter', default=101,

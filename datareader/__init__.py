@@ -11,13 +11,15 @@ import cv2
 from datareader.source.preprocessing.dataprocessing import *
 from datareader.source.util.signalanalysis import *
 from datareader.definitions import *
-
+import pandas as pd
 
 '''
     Some parameters
 '''
 def get_params():
     params=dict()
+    params['pre_time_horizon'] = 11
+    params['time_horizon'] = 11
     params['window_x'] = 11
     params['window_y'] = 11
     params['poly_x'] = 2
@@ -145,3 +147,62 @@ def plot_rectangle_for_timestamp(img, dataset, timestamp):
     for index, row in XY.iterrows():
         img=plot_rectangle(img, (row['xmin'],row['ymin']), (row['xmax'],row['ymax']), (255, 0, 0), 2)
     return img
+
+'''
+    plot a polylines
+'''
+def plot_polylines(image, pts, isClosed, color, thickness):
+    image = cv2.polylines(image, [pts], isClosed, color, thickness)
+    return image
+
+
+'''
+    get the dataset with a specific value
+'''
+def get_dataset_by_column_value(dataset, column, value):
+    return get_dataset_by_stamp_by_column(dataset, column, value)
+
+'''
+    number of the rows in a dataset
+'''
+def number_of_rows_dataset(dataset):
+    return len(dataset.index)
+'''
+    get center value (x,y)
+'''
+def get_center_value(dataset):
+    t=np.unique(dataset["t"])
+    x_erg = []
+    y_erg = []
+    for i in t:
+        act_row=dataset.loc[dataset["t"]==i]
+        x_cent = 0.5*(act_row["xmax"].values[0] - act_row["xmin"].values[0])+act_row["xmin"].values[0]
+        y_cent = 0.5*(act_row["ymax"].values[0] - act_row["ymin"].values[0])+act_row["ymin"].values[0]
+        x_erg.append(x_cent)
+        y_erg.append(y_cent)
+    return t, np.array(x_erg), np.array(y_erg)
+
+'''
+    get values for rectangle
+'''
+def get_values_rectangle(dataset):
+    t=np.unique(dataset["t"])
+    x_min_erg = []
+    x_max_erg = []
+    y_min_erg = []
+    y_max_erg = []
+    for i in t:
+        act_row=dataset.loc[dataset["t"]==i]
+        x_min_erg.append(act_row["xmin"].values[0])
+        x_max_erg.append(act_row["xmax"].values[0])
+        y_min_erg.append(act_row["ymin"].values[0])
+        y_max_erg.append(act_row["ymax"].values[0])
+    return t, np.array(x_min_erg), np.array(x_max_erg), np.array(y_min_erg), np.array(y_max_erg)
+
+'''
+    get extrema of dataset
+'''
+def get_extrema(dataset):
+    return (np.min(dataset["xmin"]), np.max(dataset["xmax"]), np.min(dataset["ymin"]), np.max(dataset["ymax"]))
+
+
