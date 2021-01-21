@@ -102,34 +102,74 @@ import _pickle as cPickle
     Compute velocity and acceleration with savgol_filter-function
     ("https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.savgol_filter.html")
 """
-def compute_velocity_acceleration_with_filter(x, y, params):
+def compute_velocity_with_filter(x, y, params):
     windowX = params['window_x']
     windowY = params['window_y']
     polyOrderX = params['poly_x']
     polyOrderY = params['poly_y']
     px=savgol_filter(x, windowX, polyOrderX)
     vx=savgol_filter(x, windowX, polyOrderX, 1)
-    ax=savgol_filter(x, windowX, polyOrderX, 2)
+    #ax=savgol_filter(x, windowX, polyOrderX, 2)
     py=savgol_filter(y, windowY, polyOrderY)
     vy=savgol_filter(y, windowY, polyOrderY, 1)
-    ay=savgol_filter(y, windowY, polyOrderY, 2)
-    return px, py, vx, vy, ax, ay
+    #ay=savgol_filter(y, windowY, polyOrderY, 2)
+    return px, py, vx, vy
 
 
 """
     Compute for the dataset (pandas-dataframe) velocity and acceleration (function compute_velocity_acceleration_with_filter)
 """
-def get_velocity_acceleration_for_dataset_2D(dataset, params):
+def get_velocity_signal_for_dataset_2D(dataset, params):
     allID=np.unique(dataset['id'])
-    df = pd.DataFrame(columns=['t', 'id', 'px', 'py', 'vx', 'vy', 'ax', 'ay'])
+    df = pd.DataFrame(columns=['t', 'id', 'px', 'py', 'vx', 'vy', 'px_min', 'px_max', 'py_min', 'py_max'])
     for selectedID in allID:
-        newFrame = pd.DataFrame(columns=['t', 'id', 'px', 'py', 'vx', 'vy', 'ax', 'ay'])
+        newFrame = pd.DataFrame(columns=['t', 'id', 'px', 'py', 'vx', 'vy', 'px_min', 'px_max', 'py_min', 'py_max'])
         selDat = dataset.loc[dataset['id'] == selectedID]
         newFrame['t'] = np.transpose(selDat['t'])
         xCent = selDat['xmax'] - selDat['xmin']
         yCent = selDat['ymax'] - selDat['ymin']
-        newFrame['px'], newFrame['py'], newFrame['vx'], newFrame['vy'], newFrame['ax'], newFrame['ay']=compute_velocity_acceleration_with_filter(xCent, yCent, params)
-
+        newFrame['px'], newFrame['py'], newFrame['vx'], newFrame['vy']=compute_velocity_with_filter(xCent, yCent, params)
+        newFrame['px_min'] = selDat['xmin']
+        newFrame['px_max'] = selDat['xmax']
+        newFrame['py_min'] = selDat['ymin']
+        newFrame['py_max'] = selDat['ymax']
         newFrame['id']=selectedID
         df=pd.concat((df, newFrame))
     return df
+
+"""
+    get rows by row_idx
+"""
+def get_lines_row_idx(df, row_idx):
+    return df.iloc[row_idx]
+
+"""
+    get zonotypes of a pandas dataframe by a row number
+"""
+def get_zonotypes_2D_by_row(df, row):
+    sel_row=get_lines_row_idx(df, row)
+    Zonotype = {'c': np.matrix([[sel_row["px"]],
+                               [sel_row["py"]],
+                               [sel_row["vx"]],
+                               [sel_row["vy"]]
+                               ]),
+               'g': np.matrix([[1, -1],
+                               [1, 1],
+                               [0, 0],
+                               [0, 0]
+                               ])}
+    return Zonotype
+
+"""
+    
+"""
+def get_dataset_by_stamp_by_column(df, column, stamp):
+    bool_val=df[column] == stamp
+    values=df.loc[bool_val]
+    return bool_val.any(), values
+
+"""
+
+"""
+def get_dataset_by_iterable_by_column(df, column_name, iterable):
+    return df.loc[df[column_name].isin(iterable)]

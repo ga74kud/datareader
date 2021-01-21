@@ -31,19 +31,11 @@ class dataprocessing(object):
         # self.dataDict=self.computeDataDict(params, param2DataFrame)
         self.dataset = self.datasetWithProcessing(params)
         self.extremePositions = self.getExtrema()
-    """
-        get the extrema of the whole dataset
-    """
-    def getExtrema(self, dataset):
-        xmin, xmax, ymin, ymax = computeExtrema(dataset)
-        extremePositions = {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax}
-
-        return extremePositions
 
     """
         get the whole dataset depending on the path variable and get a pandas variable back
     """
-    def readDataset(self, path):
+    def read_dataset(self, path):
         df = pd.read_csv(path, sep=" ", header=None,
                          names=['id', 'xmin', 'ymin', 'xmax', 'ymax', 't', 'lost', 'occluded', 'generated', 'label'])
         # data = pd.read_csv(self.file_path, header=None)
@@ -52,7 +44,6 @@ class dataprocessing(object):
     """
         get the whole dataset depending on the path variable and get a pandas variable back
     """
-
     def preprocessing_dataset(self, params, dataset):
-        knowledgeDataset = get_velocity_acceleration_for_dataset_2D(dataset, params)
+        knowledgeDataset = get_velocity_for_dataset_2D(dataset, params)
         return knowledgeDataset

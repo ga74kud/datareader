@@ -44,5 +44,6 @@ setup(name='datareader',
           "argparse",
           "scipy",
           "matplotlib",
+          "opencv-python",
         ],
       zip_safe=False)

@@ -42,7 +42,6 @@ def compute_extrema_2D(dataset):
     get path one level above
 """
 def get_superior_path():
-        """Returns project root folder."""
         return Path(__file__).parent
 
 """
@@ -55,6 +54,17 @@ def get_bool_array_depending_on_column_value(df, column, value):
 """
     get a new pandas dataframe depending on a boolean array
 """
-def anotherfunction(df, bool_rows):
-    sel_df=df.index[bool_rows == True]
+def selection_of_dataset_by_boolean_array(df, bool_rows):
+    sel_df=df[bool_rows]
     return sel_df
+
+'''
+   Get selection of dataset specified by a column and the range from min_val to max_val
+   Example: the dataset should be selected by the time range from [4s, 6s]
+'''
+def dataset_by_range(df, column, min_val, max_val):
+    a = df[column] >= min_val
+    b = df[column] <= max_val
+    c = a & b
+    new_df=selection_of_dataset_by_boolean_array(df, c)
+    return new_df
