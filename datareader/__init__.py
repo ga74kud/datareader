@@ -20,10 +20,8 @@ def get_params():
     params=dict()
     params['pre_time_horizon'] = 11
     params['time_horizon'] = 11
-    params['window_x'] = 11
-    params['window_y'] = 11
-    params['poly_x'] = 2
-    params['poly_y'] = 2
+    params['window_size'] = 51
+    params['polyorder'] = 2
     params['PROJECT_ROOT']=read_project_root
     return params
 
@@ -183,9 +181,9 @@ def get_center_value(dataset):
     return t, np.array(x_erg), np.array(y_erg)
 
 '''
-    get values for rectangle
+    get values for rectangle for time range
 '''
-def get_values_rectangle(dataset):
+def get_values_rectangle_for_time_range(dataset):
     t=np.unique(dataset["t"])
     x_min_erg = []
     x_max_erg = []
@@ -205,4 +203,77 @@ def get_values_rectangle(dataset):
 def get_extrema(dataset):
     return (np.min(dataset["xmin"]), np.max(dataset["xmax"]), np.min(dataset["ymin"]), np.max(dataset["ymax"]))
 
+'''
+    get values for rectangle for each row
+'''
+def get_all_ids(dataset):
+    return np.unique(dataset["id"])
 
+'''
+    get past data indices for an id for a specific timestamp
+'''
+def get_past_measurements_indices_for_id(dataset, id, timestamp):
+    r, Y=get_dataset_by_column_value(dataset, "id", id)
+    bool_vec=Y["t"]<timestamp
+    erg=[i for i in bool_vec.index if bool_vec[i]]
+    return erg
+
+'''
+    get future data for an id for a specific timestamp
+'''
+def get_future_measurements_for_id(dataset, id, timestamp):
+    r, Y=get_dataset_by_column_value(dataset, "id", id)
+    bool_vec=Y["t"]>timestamp
+    erg=[i for i in bool_vec.index if bool_vec[i]]
+    return erg
+
+'''
+    get past states from past measurements for a specific id
+'''
+def get_past_states(dataset, past_id_indices, params, plot_it=False):
+    Y=dataset.loc[past_id_indices]
+    rt, rx, ry = get_center_value(Y)
+    vx, vy=compute_velocity_with_savgol_filter(rx, ry, params["window_size"], params["polyorder"])
+    extrema_X = get_extrema(dataset)
+    if(plot_it):
+        plot_positions_velocities(rt, rx, ry, vx, vy, extrema_X)
+    states=[rt[:-1], rx[:-1], ry[:-1], vx[:-1], vy[:-1]]
+    initial_state=[rt[-1], rx[-1], ry[-1], vx[-1], vy[-1]]
+    return initial_state, states
+
+'''
+    plot positions and velocities
+'''
+def plot_positions_velocities(t, px, py, vx, vy, extrema_X):
+    f, (ax1, ax2, ax3) = plt.subplots(3, 1)
+    ax1.plot(t, px, label='px')
+    ax1.plot(t, py, label='py')
+    ax1.legend()
+    ax2.plot(t, vx, label='vx')
+    ax2.plot(t, vy, label='vy')
+    ax2.legend()
+    ax3.plot(px, py, label='position')
+    ax3.axis(extrema_X)
+    ax3.legend()
+    plt.show()
+
+'''
+    get velocity with savgol filter
+'''
+def compute_velocity_with_savgol_filter(px, py, window_size, polyorder):
+    vx = savgol_filter(px, window_size, polyorder, 1)
+    vy = savgol_filter(py, window_size, polyorder, 1)
+    return vx, vy
+
+'''
+    get future states for a specific id
+'''
+def get_future_states(dataset, future_id_indices, params, plot_it=False):
+    Y=dataset.loc[future_id_indices]
+    rt, rx, ry = get_center_value(Y)
+    vx, vy=compute_velocity_with_savgol_filter(rx, ry, params["window_size"], params["polyorder"])
+    extrema_X = get_extrema(dataset)
+    if(plot_it):
+        plot_positions_velocities(rt, rx, ry, vx, vy, extrema_X)
+    states=[rt, rx, ry, vx, vy]
+    return states
