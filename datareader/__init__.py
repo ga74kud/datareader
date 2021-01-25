@@ -11,6 +11,9 @@ import cv2
 from datareader.source.preprocessing.dataprocessing import *
 from datareader.source.util.signalanalysis import *
 from datareader.definitions import *
+import time
+import reachab
+
 import pandas as pd
 
 '''
@@ -18,6 +21,7 @@ import pandas as pd
 '''
 def get_params():
     params=dict()
+    params['Ts']=0.02
     params['pre_time_horizon'] = 11
     params['time_horizon'] = 11
     params['window_size'] = 51
@@ -140,10 +144,10 @@ def plot_rectangle(image, start_point, end_point, color, thickness):
 '''
     plot all rectangles on the image for a specific timestamp
 '''
-def plot_rectangle_for_timestamp(img, dataset, timestamp):
+def plot_rectangle_for_timestamp(img, dataset, timestamp, color=(255, 0, 0)):
     no, XY = get_dataset_by_timestamp(dataset, timestamp)
     for index, row in XY.iterrows():
-        img=plot_rectangle(img, (row['xmin'],row['ymin']), (row['xmax'],row['ymax']), (255, 0, 0), 2)
+        img=plot_rectangle(img, (row['xmin'],row['ymin']), (row['xmax'],row['ymax']), color, 2)
     return img
 
 '''
@@ -232,14 +236,17 @@ def get_future_measurements_for_id(dataset, id, timestamp):
 '''
 def get_past_states(dataset, past_id_indices, params, plot_it=False):
     Y=dataset.loc[past_id_indices]
+    max_idx_Y=Y.loc[Y['t']==np.max(Y['t'])]
+    max_idx_Y=max_idx_Y.iloc[0]
+    initial_state_set = np.matrix([[0.5*(max_idx_Y['xmax']-max_idx_Y['xmin']), 0], [0, 0.5*(max_idx_Y['ymax']-max_idx_Y['ymin'])], [0, 0], [0, 0]])
     rt, rx, ry = get_center_value(Y)
     vx, vy=compute_velocity_with_savgol_filter(rx, ry, params["window_size"], params["polyorder"])
     extrema_X = get_extrema(dataset)
     if(plot_it):
         plot_positions_velocities(rt, rx, ry, vx, vy, extrema_X)
-    states=[rt[:-1], rx[:-1], ry[:-1], vx[:-1], vy[:-1]]
-    initial_state=[rt[-1], rx[-1], ry[-1], vx[-1], vy[-1]]
-    return initial_state, states
+    states=[rt, rx, ry, vx, vy]
+    initial_state=np.matrix([[rx[-1]], [ry[-1]], [vx[-1]], [vy[-1]]])
+    return initial_state, states, initial_state_set
 
 '''
     plot positions and velocities
@@ -261,8 +268,11 @@ def plot_positions_velocities(t, px, py, vx, vy, extrema_X):
     get velocity with savgol filter
 '''
 def compute_velocity_with_savgol_filter(px, py, window_size, polyorder):
-    vx = savgol_filter(px, window_size, polyorder, 1)
-    vy = savgol_filter(py, window_size, polyorder, 1)
+    if(len(px)>window_size+2):
+        vx = savgol_filter(px, window_size, polyorder, 1)
+        vy = savgol_filter(py, window_size, polyorder, 1)
+    else:
+        return [10, 10], [10, 10]
     return vx, vy
 
 '''
@@ -277,3 +287,91 @@ def get_future_states(dataset, future_id_indices, params, plot_it=False):
         plot_positions_velocities(rt, rx, ry, vx, vy, extrema_X)
     states=[rt, rx, ry, vx, vy]
     return states
+
+'''
+    get elapsed time
+'''
+def get_elapsed_time(init_time):
+    elapsed_time = time.time() - init_time
+    return elapsed_time
+
+'''
+    evaluate and plot computed zonosets from Reachability Analysis and selected dataset
+'''
+def evaluate_zonoset_selected_dataset(b_dataset, zonoset, extrema_X):
+    plt.figure()
+    for zoni in zonoset:
+        x = zoni[0]
+        y = zoni[1]
+        plt.fill(x, y, facecolor="green", edgecolor='k', linewidth=3, alpha=.07)
+    plot_hull_with_lines(b_dataset)
+    plt.axis(extrema_X)
+    plt.show()
+    None
+
+'''
+    plot hull with lines
+'''
+def plot_hull_with_lines(dataset):
+    rt, rxmin, rxmax, rymin, rymax = get_values_rectangle_for_time_range(dataset)
+    #################################
+    ### computation of velocities ###
+    #################################
+    plt.plot(rxmin, rymin, 'k')
+    plt.plot(rxmax, rymax, 'k')
+    [plt.plot([rxmin[i], rxmax[i]], [rymin[i], rymax[i]], 'red') for i in range(0, len(rxmin), 15)]
+
+'''
+    get initial state for selected line
+'''
+def get_initial_state_for_line(dataset, sel_line, params):
+    initial_state=[]
+    initial_state_set=[]
+    erg = dataset.iloc[sel_line]
+    past_indices=get_past_measurements_indices_for_id(dataset, erg['id'], erg['t'])
+    if(len(past_indices)>30):
+        initial_state, past_states, initial_state_set=get_past_states(dataset, past_indices, params)
+    return initial_state, initial_state_set, past_states
+
+def get_past_states_and_predict_initial_zonotypes(x_initial, x_initial_set, past_states):
+    Omega_0 = {'c': x_initial, 'g': x_initial_set}
+    U = {'c': np.matrix([[0],
+                         [0],
+                         [0],
+                         [0],
+                         ]),
+         'g': np.matrix([[10, 0],
+                         [0, 10],
+                         [0, 0],
+                         [0, 0]
+                         ])
+         }
+    return Omega_0, U
+
+def evaluate_prediction_with_zonotypes(Omega_0, U, sel_line, future_states, params):
+    time=future_states[0]
+    px=future_states[1]
+    py = future_states[2]
+    timerange=(np.max(time)-np.min(time))*params['Ts']
+    params_reach = {}
+    params_reach['box_function'] = 'with_box'
+    params_reach['steps'] = 4
+    params_reach['time_horizon'] = timerange
+    params_reach['visualization'] = 'y'
+    zonoset = reachab.reach(Omega_0, U, params_reach)
+    None
+
+def get_future_states_for_line(dataset, sel_line, params):
+    future_states=[]
+    erg = dataset.iloc[sel_line]
+    future_indices = get_future_measurements_indices_for_id(dataset, erg['id'], erg['t'])
+    if (len(future_indices) > 2):
+        future_states = get_future_states(dataset, future_indices, params)
+
+    return future_states
+
+def get_future_measurements_indices_for_id(dataset, id, timestamp):
+    r, Y = get_dataset_by_column_value(dataset, "id", id)
+    bool_vec = Y["t"] > timestamp
+    erg = [i for i in bool_vec.index if bool_vec[i]]
+    return erg
