@@ -22,11 +22,18 @@ import pandas as pd
 def get_params():
     params=dict()
     params['Ts']=0.02
+    params['T'] = 2
     params['pre_time_horizon'] = 11
-    params['time_horizon'] = 11
+    params['steps_time_horizon'] = np.int(params['T']/params['Ts'])
     params['window_size'] = 51
     params['polyorder'] = 2
     params['PROJECT_ROOT']=read_project_root
+    params_reach = {}
+    params_reach['box_function'] = 'without_box'
+    params_reach['steps'] = 4
+    params_reach['time_horizon'] = params['T']
+    params_reach['visualization'] = 'y'
+    params['params_reach']=params_reach
     return params
 
 
@@ -348,19 +355,62 @@ def get_past_states_and_predict_initial_zonotypes(x_initial, x_initial_set, past
          }
     return Omega_0, U
 
-def evaluate_prediction_with_zonotypes(Omega_0, U, sel_line, future_states, params):
-    time=future_states[0]
-    px=future_states[1]
-    py = future_states[2]
-    timerange=(np.max(time)-np.min(time))*params['Ts']
-    params_reach = {}
-    params_reach['box_function'] = 'with_box'
-    params_reach['steps'] = 4
-    params_reach['time_horizon'] = timerange
-    params_reach['visualization'] = 'y'
-    zonoset = reachab.reach(Omega_0, U, params_reach)
-    None
+def classify_time_in_tuple_list(act_time, tuple_list):
+    idx=[]
+    for act_idx, act_val in enumerate(tuple_list):
+        if(act_time>act_val[0] and act_time<act_val[1]):
+            idx=act_idx
+            break
+    return idx
 
+def compare_quantify_zonotype_quality(zonotype, act_dataset):
+    not_capturing=False
+    x_rect_min = act_dataset['xmin']
+    x_rect_max = act_dataset['xmax']
+    y_rect_min = act_dataset['ymin']
+    y_rect_max = act_dataset['ymax']
+    points_zono = [(zonotype[0][idx], zonotype[1][idx]) for idx, i in enumerate(zonotype[0])]
+    for i in points_zono:
+        if(i[0]>x_rect_min and i[0]<x_rect_max and i[1]>y_rect_min and i[1]<y_rect_max):
+            not_capturing=True
+            break
+    return not_capturing
+'''
+    evaluate zonotypes
+'''
+def evaluate_zonotypes(future_times, zonoset, steps, future_dataset):
+    for act_idx, act_t in enumerate(future_times):
+        idx=classify_time_in_tuple_list(act_t, steps)
+        if(idx==[]):
+            break
+        else:
+            ret=future_times.axes[0][act_idx]
+            act_dataset=future_dataset.loc[ret]
+            abc=zonoset[idx]
+            not_capturing=compare_quantify_zonotype_quality(abc, act_dataset)
+            if(not_capturing==True):
+                break
+    return not_capturing
+'''
+    evaluation of the prediction with reachability analysis and zonotypes and
+    the real movement prediction
+'''
+def evaluate_prediction_with_zonotypes(X_all, Omega_0, U, sel_line, future_indices, params):
+    params_reach=params['params_reach']
+    future_dataset=X_all.loc[future_indices]
+    act_meas=X_all.loc[sel_line]
+    dif_T = params_reach['time_horizon'] / (params_reach['steps'] + 1)
+
+    future_times=(future_dataset['t']-act_meas['t'])*params['Ts']
+    zonoset = reachab.reach(Omega_0, U, params_reach)
+
+
+    steps=[(i*dif_T, (i+1)*dif_T) for i in range(0, params_reach['steps']+1)]
+    not_capturing=evaluate_zonotypes(future_times, zonoset, steps, future_dataset)
+    return not_capturing
+'''
+    get the future states for a line
+'''
 def get_future_states_for_line(dataset, sel_line, params):
     future_states=[]
     erg = dataset.iloc[sel_line]
@@ -375,3 +425,11 @@ def get_future_measurements_indices_for_id(dataset, id, timestamp):
     bool_vec = Y["t"] > timestamp
     erg = [i for i in bool_vec.index if bool_vec[i]]
     return erg
+
+def check_if_line_is_captured_by_zonotypes(X_all, sel_line, params):
+    initial_state, initial_state_set, past_states = get_initial_state_for_line(X_all, sel_line, params)
+    erg = X_all.iloc[sel_line]
+    future_indices = get_future_measurements_indices_for_id(X_all, erg['id'], erg['t'])
+    Omega_0, U = get_past_states_and_predict_initial_zonotypes(initial_state, initial_state_set, past_states)
+    does_not_capture = evaluate_prediction_with_zonotypes(X_all, Omega_0, U, sel_line, future_indices, params)
+    return does_not_capture

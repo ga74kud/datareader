@@ -1,7 +1,4 @@
-import os
-import datareader
 from datareader.__init__ import *
-import matplotlib.pyplot as plt
 import reachab
 import time
 params=get_params()
@@ -9,7 +6,6 @@ params=get_params()
 ########################
 ### user preferences ###
 ########################
-Ts=0.02
 select_time=7740
 t_min=select_time-params["window_size"] - 80
 t_max=select_time+params["window_size"] + 20
@@ -55,11 +51,9 @@ logging.info("get the IDs for certain timestep: Done after " + str(get_elapsed_t
 ###                                      movement prediction                                  ###
 #################################################################################################
 sel_line=32
-initial_state, initial_state_set, past_states=get_initial_state_for_line(X_all, sel_line, params)
-erg = X_all.iloc[sel_line]
-future_indices = get_future_measurements_indices_for_id(X_all, erg['id'], erg['t'])
-Omega_0, U=get_past_states_and_predict_initial_zonotypes(initial_state, initial_state_set, past_states)
-evaluate_prediction_with_zonotypes(X_all, Omega_0, U, sel_line, future_indices, params)
+does_not_capture=check_if_line_is_captured_by_zonotypes(X_all, sel_line, params)
+logging.info("get initial state and future states for certain row. Perform Reachability Analysis for "
+             "movement prediction  : Done after " + str(get_elapsed_time(init_time)))
 ##################################################
 ### get past measurements indices for each IDs ###
 ##################################################
@@ -67,14 +61,6 @@ past_dict={}
 for act_id in id_array:
     past_dict[str(act_id)]=get_past_measurements_indices_for_id(X, act_id, select_time)
 logging.info("get past measurement indices for each IDs: Done after " + str(get_elapsed_time(init_time)))
-
-####################################################
-### get future measurements indices for each IDs ###
-####################################################
-future_dict={}
-for act_id in id_array:
-    future_dict[str(act_id)]=get_future_measurements_for_id(X, act_id, select_time)
-logging.info("get future measurement indices for each IDs: Done after " + str(get_elapsed_time(init_time)))
 
 ######################################################################
 ### get initial and past states for an ID and a specific timestamp ###
@@ -90,14 +76,6 @@ for act_id in id_array:
         past_states_dict[str(act_id)] = past_states
 logging.info("get initial and past states for an ID and a specific timestamp: Done after " + str(get_elapsed_time(init_time)))
 
-############################################################
-### get future states for an ID and a specific timestamp ###
-############################################################
-# future_states_dict={}
-# for act_id in id_array:
-#     future_states=get_future_states(X, future_dict[str(act_id)], params)
-#     future_states_dict[str(act_id)] = future_states
-# logging.info("get future states for an ID and a specific timestamp: Done after " + str(get_elapsed_time(init_time)))
 
 ############################################################
 ### use of reachability analysis for movement prediction ###
@@ -126,22 +104,3 @@ logging.info("use of reachability analysis for movement prediction: Done after "
 
 
 
-# ################################################################
-# ### get the dataset of a certain id and perform a prediction ###
-# ################################################################
-# id=2
-# r, Z=get_dataset_by_column_value(X, "id", id)
-# b_dataset=Z.loc[Z['t']>select_time]
-# total_time=(np.max(b_dataset['t'])-np.min(b_dataset['t']))*Ts
-# x_initial=initial_state_dict[str(id)]
-# x_initial_set=initial_state_set_dict[str(act_id)]
-# Omega_0 = {'c': x_initial, 'g': x_initial_set}
-# U = {'c': np.matrix([[0], [0], [0], [0], ]),
-#      'g': np.matrix([[10, 0], [0, 10], [0, 0], [0, 0] ]) }
-# params_reach['box_function']='with_box'
-# params_reach['steps']=10
-# params_reach['time_horizon'] = total_time
-# params_reach['visualization']='y'
-# zonoset = reachab.reach(Omega_0, U, params_reach)
-#evaluate_zonoset_selected_dataset(b_dataset, zonoset, extrema_X)
-q=1
