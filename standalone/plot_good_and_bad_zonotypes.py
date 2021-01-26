@@ -14,7 +14,7 @@ init_time = time.time()
 #############################
 ###     initial steps     ###
 #############################
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 path = datareader.__path__[0]
 location="bookstore"
 video="video0"
@@ -26,33 +26,33 @@ image_path = os.path.join(path, "data/input/stanford/", location, video, "refere
 ################################
 X_all = read_dataset(params, annotation_path)
 extrema_X=get_extrema(X_all)
-logging.info("read dataset: Done after " + str(get_elapsed_time(init_time)))
+logging.warn("read dataset: Done after " + str(get_elapsed_time(init_time)))
 
 ######################################
 ### read the dataset by time-range ###
 ######################################
 X=get_dataset_by_range(X_all, 't', t_min, t_max)
-logging.info("selection of the dataset: Done after " + str(get_elapsed_time(init_time)))
+logging.warn("selection of the dataset: Done after " + str(get_elapsed_time(init_time)))
 
 ###########################################
 ###  get the values of a certain timestep     ###
 ###########################################
 r, Y=get_dataset_by_column_value(X, "t", select_time)
-logging.info("select dataset for specific time: Done after " + str(get_elapsed_time(init_time)))
+logging.warn("select dataset for specific time: Done after " + str(get_elapsed_time(init_time)))
 
 ########################################
 ### get ids for a certain time step  ###
 ########################################
 id_array=get_all_ids(Y)
-logging.info("get the IDs for certain timestep: Done after " + str(get_elapsed_time(init_time)))
+logging.warn("get the IDs for certain timestep: Done after " + str(get_elapsed_time(init_time)))
 
 #################################################################################################
 ### get initial state and future states for certain row. Perform Reachability Analysis for    ###
 ###                                      movement prediction                                  ###
 #################################################################################################
 sel_line=32
-does_not_capture=check_if_line_is_captured_by_zonotypes(X_all, sel_line, params)
-logging.info("get initial state and future states for certain row. Perform Reachability Analysis for "
+does_not_capture, U=check_if_line_is_captured_by_zonotypes(X_all, sel_line, params)
+logging.warn("get initial state and future states for certain row. Perform Reachability Analysis for "
              "movement prediction  : Done after " + str(get_elapsed_time(init_time)))
 ##################################################
 ### get past measurements indices for each IDs ###
@@ -60,7 +60,7 @@ logging.info("get initial state and future states for certain row. Perform Reach
 past_dict={}
 for act_id in id_array:
     past_dict[str(act_id)]=get_past_measurements_indices_for_id(X, act_id, select_time)
-logging.info("get past measurement indices for each IDs: Done after " + str(get_elapsed_time(init_time)))
+logging.warn("get past measurement indices for each IDs: Done after " + str(get_elapsed_time(init_time)))
 
 ######################################################################
 ### get initial and past states for an ID and a specific timestamp ###
@@ -74,7 +74,7 @@ for act_id in id_array:
         initial_state_dict[str(act_id)] = initial_state
         initial_state_set_dict[str(act_id)] = initial_state_set
         past_states_dict[str(act_id)] = past_states
-logging.info("get initial and past states for an ID and a specific timestamp: Done after " + str(get_elapsed_time(init_time)))
+logging.warn("get initial and past states for an ID and a specific timestamp: Done after " + str(get_elapsed_time(init_time)))
 
 
 ############################################################
@@ -100,7 +100,7 @@ for act_id in id_array:
         params_reach= params['params_reach']
         zonoset = reachab.reach(Omega_0, U, params_reach)
 reachab.show_all()
-logging.info("use of reachability analysis for movement prediction: Done after " + str(get_elapsed_time(init_time)))
+logging.warn("use of reachability analysis for movement prediction: Done after " + str(get_elapsed_time(init_time)))
 
 
 

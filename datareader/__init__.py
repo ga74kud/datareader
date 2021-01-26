@@ -29,10 +29,11 @@ def get_params():
     params['polyorder'] = 2
     params['PROJECT_ROOT']=read_project_root
     params_reach = {}
-    params_reach['box_function'] = 'without_box'
+    params_reach['box_function'] = 'with_box'
     params_reach['steps'] = 4
     params_reach['time_horizon'] = params['T']
     params_reach['visualization'] = 'y'
+    params_reach['face_color'] = "red"
     params['params_reach']=params_reach
     return params
 
@@ -432,4 +433,5 @@ def check_if_line_is_captured_by_zonotypes(X_all, sel_line, params):
     future_indices = get_future_measurements_indices_for_id(X_all, erg['id'], erg['t'])
     Omega_0, U = get_past_states_and_predict_initial_zonotypes(initial_state, initial_state_set, past_states)
     does_not_capture = evaluate_prediction_with_zonotypes(X_all, Omega_0, U, sel_line, future_indices, params)
-    return does_not_capture
+    return does_not_capture, Omega_0, U
+
