@@ -12,8 +12,8 @@ logging.warn("start: Done after " + str(get_elapsed_time(init_time)))
 ########################
 select_time=7740
 params=get_params()
-t_min=select_time-params["window_size"] - 80
-t_max=select_time+params["window_size"] + 20
+t_min=select_time-params["window_size"] - 800
+t_max=select_time+params["window_size"] + 200
 
 #############################
 ###     initial steps     ###
