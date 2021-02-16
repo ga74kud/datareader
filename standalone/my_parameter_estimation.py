@@ -3,10 +3,16 @@ This is an algorithm written by Michael Hartmann, based on the desription in "Ch
 Springer 2006"
 '''
 
-
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as sd
 
+'''
+    plot the dataset
+'''
+def plot_X(X):
+
+    plt.hist(X)
 '''
     one_cycle
 '''
@@ -78,28 +84,37 @@ def evaluate_loglikelihood(params, model, dataset):
         erg+=np.log(act_sum)
     return erg
 
-
-##################
-### Parameters ###
-##################
-N=100
-model = {'pi': [.4, .6], 'mu': [3, 2], 'Sigma': [0.1, .3]}
-my_model = {'pi': [.3, .7], 'mu': [3.2, 2.2], 'Sigma': [0.1, .3]}
-params={'N': 100, 'K': len(model['pi'])}
-###############
-### Dataset ###
-###############
-modes_X=[model['pi'][wlt]*np.random.normal(model['mu'][wlt], model['Sigma'][wlt], N) for wlt in range(0, params['K'])]
-X=modes_X[0]
-for i in range(1, len(modes_X)):
-    X+=modes_X[i]
 ##########################################################
 ### Step 1: Evaluate the log likelihood the first time ###
 ##########################################################
-act_log_likeli=evaluate_loglikelihood(params, my_model, X)
+##################
+### Parameters ###
+##################
+model = {'pi': [.4, .6], 'mu': [20, 2], 'Sigma': [2, 5]}
+my_model = {'pi': [.4, .6], 'mu': [18.1, 2.2], 'Sigma': [2.1, 6.1]}
+params={'N': 1000, 'K': len(model['pi']), 'am_cycles': 5}
+###############
+### Dataset ###
+###############
+X=list()
+select=np.random.choice(2, params['N'], p=model['pi'])
+for idx, val in enumerate(select):
+    mu=model['mu'][val]
+    Sigma=model['Sigma'][val]
+    pi=model['pi'][val]
+    new_sample=np.float(np.random.normal(mu, Sigma, 1))
+    X.append(new_sample)
+X=np.array(X)
+act_log_likeli=evaluate_loglikelihood(params, model, X)
 ###################################
 ### Cycles: Iterative steps 2-4 ###
 ###################################
-for cycle in range(0, 3):
+for cycle in range(0, params['am_cycles']):
     my_model, act_log_likeli=one_cycle(params, my_model, X)
+    print("Cycle: " + str(cycle) + " Value: " + str(act_log_likeli))
     print(my_model)
+#######################
+### plot the result ###
+#######################
+plot_X(X)
+plt.show()
