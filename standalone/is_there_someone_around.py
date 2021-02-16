@@ -2,29 +2,22 @@ import os
 import datareader
 from datareader.__init__ import *
 import matplotlib.pyplot as plt
-
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 ########################
 ### user preferences ###
 ########################
 id=0
 selection_A="opt_1"
-selection_B="opt_2"
 
 options={
         'opt_1':
             {"window": 71, "poly_order": 2},
-        'opt_2':
-            {"window": 21, "poly_order": 2},
-        'opt_3':
-            {"window": 71, "poly_order": 5},
-        'opt_4':
-            {"window": 21, "poly_order": 5},
         }
 
 val_A_window=options[selection_A]["window"]
 val_A_polyorder=options[selection_A]["poly_order"]
-val_B_window=options[selection_B]["window"]
-val_B_polyorder=options[selection_B]["poly_order"]
+
 #############################
 ###     initial steps     ###
 #############################
@@ -41,13 +34,11 @@ image_path = os.path.join(path, "data/input/stanford/", location, video, "refere
 ################################
 X = read_dataset(params, annotation_path)
 extrema_X=get_extrema(X)
-logging.info(X)
 
 ###########################################
 ###  get the values of a certain id     ###
 ###########################################
 r, Y=get_dataset_by_column_value(X, "id", id)
-logging.info(Y)
 ###########################################
 ### get arrays for velocity computation ###
 ###########################################
@@ -60,29 +51,30 @@ ay=(ry[:-1]-ry[1:])
 b=(rt[:-1]-rt[1:])
 cx=ax/b
 cy=ay/b
-f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+f, (ax1) = plt.subplots(1, 1, sharey=True)
 vx_a = savgol_filter(rx, val_A_window, val_A_polyorder, 1)
 vy_a = savgol_filter(ry, val_A_window, val_A_polyorder, 1)
-vx_b = savgol_filter(rx, val_B_window, val_B_polyorder, 1)
-vy_b = savgol_filter(ry, val_B_window, val_B_polyorder, 1)
-ax1.plot(rt[:-1], cx, label='naive_vx')
-ax1.plot(rt, vx_a, label='vx_'+str(val_A_window)+'_'+str(val_A_polyorder))
-ax1.plot(rt, vx_b, label='vx_'+str(val_B_window)+'_'+str(val_B_polyorder))
+naive_vel=np.sqrt(cx**2+cy**2)
+center_vel=np.sqrt(vx_a**2+vy_a**2)
+ax1.plot(rt[:-1], naive_vel, label='naive_v')
+ax1.plot(rt, center_vel, label='v_'+str(val_A_window)+'_'+str(val_A_polyorder))
 ax1.legend()
-ax2.plot(rt[:-1], cy, label='naive_vy')
-ax2.plot(rt, vy_a, label='vy_'+str(val_A_window)+'_'+str(val_A_polyorder))
-ax2.plot(rt, vy_b, label='vy_'+str(val_B_window)+'_'+str(val_B_polyorder))
-ax2.legend()
+kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
+gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
+
+# Fit to data using Maximum Likelihood Estimation of the parameters
+X=np.transpose(np.vstack((rx, ry)))
+y=center_vel
+
+
 plt.show()
 
 
 ################################
 ### compare position methods ###
 ################################
-logging.info(rt)
-logging.info(rx)
-logging.info(ry)
 plt.plot(rx, ry, label='ground')
+
 
 # ##############
 # px = savgol_filter(rx, 71, 2, 0)
@@ -95,12 +87,15 @@ px_a=rx[0]+abx
 py_a=ry[0]+aby
 plt.plot(px_a, py_a, label='filter_'+str(val_A_window)+'_'+str(val_A_polyorder))
 ##############
-abx=np.cumsum(vx_b)
-aby=np.cumsum(vy_b)
 px_b=rx[0]+abx
 py_b=ry[0]+aby
-plt.plot(px_b, py_b, label='filter_'+str(val_B_window)+'_'+str(val_B_polyorder))
 ##############
 plt.axis(extrema_X)
 plt.legend()
+##############
+# Arrows
+for wlt in range(0, len(rx)):
+    plt.arrow(rx[wlt],ry[wlt],vx_a[wlt],vy_a[wlt],
+                    fc="black", ec='black', alpha=.7, width=.1,
+                    head_width=1.0, head_length=1)
 plt.show()

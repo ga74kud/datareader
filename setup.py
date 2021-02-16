@@ -45,5 +45,6 @@ setup(name='datareader',
           "scipy",
           "matplotlib",
           "opencv-python",
+          "scikit-learn"
         ],
       zip_safe=False)
