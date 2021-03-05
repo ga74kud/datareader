@@ -1,5 +1,4 @@
-import os
-import datareader
+import reachab as rb
 from datareader.__init__ import *
 import matplotlib.pyplot as plt
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -7,6 +6,8 @@ from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 ########################
 ### user preferences ###
 ########################
+big_N=100
+Ts=0.02
 id=0
 selection_A="opt_1"
 
@@ -62,9 +63,7 @@ ax1.legend()
 kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
 gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
 
-# Fit to data using Maximum Likelihood Estimation of the parameters
-X=np.transpose(np.vstack((rx, ry)))
-y=center_vel
+
 
 
 plt.show()
@@ -92,10 +91,40 @@ py_b=ry[0]+aby
 ##############
 plt.axis(extrema_X)
 plt.legend()
+plt.show()
 ##############
 # Arrows
 for wlt in range(0, len(rx)):
     plt.arrow(rx[wlt],ry[wlt],vx_a[wlt],vy_a[wlt],
                     fc="black", ec='black', alpha=.7, width=.1,
-                    head_width=1.0, head_length=1)
+                    head_width=10.0, head_length=1)
+    if((wlt % big_N) == 0 and wlt > big_N):
+        Omega_0 = {'c': np.matrix([[rx[wlt]],
+                                   [ry[wlt]],
+                                   [vx_a[wlt]],
+                                   [vy_a[wlt]]
+                                   ]),
+                   'g': np.matrix([[10, 0],
+                                   [0, 10],
+                                   [0, 0],
+                                   [0, 0]
+                                   ])
+                   }
+        U = {'c': np.matrix([[0],
+                             [0],
+                             [vx_a[wlt]],
+                             [vy_a[wlt]],
+                             ]),
+             'g': np.matrix([[10, 0],
+                             [0, 3],
+                             [0, 0],
+                             [0, 0]
+                             ])
+             }
+
+        R, X, obj_reach, zonoset = rb.reach_zonotype_without_box(Omega_0, U,
+                                                          **{"time_horizon": big_N*Ts, "steps": 4, "visualization": "y",
+                                                             "face_color": "green"})
+        #all_inside_points = rb.get_sample_points_inside_hull(zonoset)
+        #rb.plot_all_inside_points(all_inside_points)
 plt.show()
