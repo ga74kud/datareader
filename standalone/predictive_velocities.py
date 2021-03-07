@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import multivariate_normal
+
 def is_symmetric(x):
     return (x.transpose() == x).all()
 
@@ -23,20 +25,21 @@ def conditioned_Sigma(Sigmas):
         erg[wlt]=Sigmas[wlt]["Sigma_ff"]-second_mat
     return erg
 
-def conditioned_pi(mu, Sigmas, x_h):
+def conditioned_pi(mu, Sigmas, x_h, pi):
     erg={new_list: [] for new_list in range(len(Sigmas))}
-    for wlt in erg:
-        None
+    vart = [multivariate_normal(mean=mu[qrt]["mu_h"], cov=Sigmas[qrt]["Sigma_hh"]).pdf(x_h) for qrt in range(0, len(erg))]
+    for wlt in erg:        # test=var.pdf([0, 0])
+        erg[wlt]=vart[wlt]/np.sum(vart)
     return erg
 
 
 pi={0: .8, 1: .2}
 mu={0:
-        {"mu_h": np.array([[1], [2]]),
-        "mu_f": np.array([[2], [3]])},
+        {"mu_h": np.array([1, 2]),
+        "mu_f": np.array([2, 3])},
     1:
-        {"mu_h": np.array([[3], [4]]),
-        "mu_f": np.array([[2], [3]])}}
+        {"mu_h": np.array([3, 4]),
+        "mu_f": np.array([2, 3])}}
 
 Sigmas={0:
             {"Sigma_hh": np.array([[1, 0], [0, 1]]),
@@ -54,11 +57,11 @@ Sigmas={0:
 # print(bool_B)
 
 
-new_mu=conditioned_mu(mu, Sigmas, np.array([[8], [8]]))
+new_mu=conditioned_mu(mu, Sigmas, np.array([8, 8]))
 print(new_mu)
 new_Sigma=conditioned_Sigma(Sigmas)
 print(new_Sigma)
-new_pi=conditioned_pi(mu, Sigmas, np.array([[8], [8]]))
+new_pi=conditioned_pi(mu, Sigmas, np.array([8, 8]), pi)
 print(new_pi)
 
 
