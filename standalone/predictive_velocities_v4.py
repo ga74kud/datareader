@@ -45,10 +45,10 @@ class causal_prob(object):
             all_val.append(vel[wlt]['pi']*multivariate_normal(mean=mu_h, cov=cov_hh).pdf(x_h))
         erg = {nl: all_val[nl]/np.sum(all_val) for nl in range(0, len(self.mean))}
         return erg
-    def get_dataset(self, start_pos,vel):
+    def get_dataset(self, params, start_pos,vel):
 
-        xs, ys = np.random.multivariate_normal(start_pos['mu'], start_pos['Sigma'], 5000).T
-        idx=np.random.choice(len(vel), 5000, p=[vel[rqt]['pi'] for rqt in vel])
+        xs, ys = np.random.multivariate_normal(start_pos['mu'], start_pos['Sigma'], params['N']).T
+        idx=np.random.choice(len(vel), params['N'], p=[vel[rqt]['pi'] for rqt in vel])
         xe, ye=np.zeros((len(xs),)), np.zeros((len(ys),))
         for ix, qrt in enumerate(idx):
             vx, vy = np.random.multivariate_normal(vel[qrt]['mu'], vel[qrt]['Sigma'])
@@ -71,16 +71,16 @@ class causal_prob(object):
 
 
 
-start_pos={'mu': np.array([1, 2]), 'Sigma': np.array([[.4, 0], [0, .4]])}
-vel={0: {'pi':.5, 'mu': np.array([8, 8]), 'Sigma': np.array([[1, 0.5], [0.5, 1]])},
+start_pos={'mu': np.array([0, 0]), 'Sigma': np.array([[.4, 0], [0, .4]])}
+vel={0: {'pi':.6, 'mu': np.array([8, 8]), 'Sigma': np.array([[1, 0.5], [0.5, 1]])},
      1:{'pi':.3, 'mu': np.array([-8, 2]), 'Sigma': np.array([[.4, -0.6], [-0.6, .4]])},
-     2: {'pi': .2, 'mu': np.array([1, -7]), 'Sigma': np.array([[.4, -0.6], [-0.6, .4]])}
+     2: {'pi': .1, 'mu': np.array([1, -7]), 'Sigma': np.array([[.4, -0.6], [-0.6, .4]])}
      }
 
-
+params={'N': 100}
 xh=np.array([4.5, 4.5])
 obj_causal = causal_prob()
-obj_causal.get_dataset(start_pos,vel)
+obj_causal.get_dataset(params, start_pos,vel)
 new_mu=obj_causal.conditioned_mu(xh)
 print(new_mu)
 new_Sigma=obj_causal.conditioned_Sigma()
