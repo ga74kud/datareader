@@ -45,6 +45,8 @@ setup(name='datareader',
           "scipy",
           "matplotlib",
           "opencv-python",
-          "scikit-learn"
+          "scikit-learn",
+          "shapely",
+          "reachab"
         ],
       zip_safe=False)

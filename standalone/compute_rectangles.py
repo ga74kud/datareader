@@ -1,3 +1,12 @@
+# -------------------------------------------------------------
+# code developed by Michael Hartmann during his Ph.D.
+# Rectangles for a single trajectory
+#
+# (C) 2021 Michael Hartmann, Graz, Austria
+# Released under GNU GENERAL PUBLIC LICENSE
+# email michael.hartmann@v2c2.at
+# -------------------------------------------------------------
+
 import os
 import datareader
 from datareader.__init__ import *
