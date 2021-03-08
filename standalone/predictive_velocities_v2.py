@@ -1,3 +1,5 @@
+import warnings
+import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import multivariate_normal
@@ -86,34 +88,34 @@ class causal_prob(object):
     def is_pos_definite(self,x):
         eig_vals=np.linalg.eigvals(x)
         return np.all(eig_vals > 0)
-
-    def conditioned_mu(self, mu, Sigmas, x_h):
-        erg={new_list: [] for new_list in range(len(Sigmas))}
-        for wlt in erg:
-            dif_vec=x_h-mu[wlt]["h"]
-            added_mu_A=np.matmul(Sigmas[wlt]["fh"],np.linalg.inv(Sigmas[wlt]["hh"]))
-            added_mu=np.matmul(added_mu_A, dif_vec)
-            erg[wlt]=mu[wlt]["f"]+added_mu
+    def get_small_pieces(self):
+        mu = self.mean
+        mu_h = mu[0:2]
+        mu_f = mu[2:]
+        cov = self.cov
+        cov_hh = cov[0:2, 0:2]
+        cov_fh = cov[2:, 0:2]
+        cov_hf = cov[0:2, 2:]
+        cov_ff = cov[2:, 2:]
+        return mu_h, mu_f, cov_hh, cov_fh, cov_hf, cov_ff
+    def conditioned_mu(self, x_h):
+        mu_h, mu_f, cov_hh, cov_fh, cov_hf, cov_ff=self.get_small_pieces()
+        dif_vec=x_h-mu_h
+        added_mu_A=np.matmul(cov_fh,np.linalg.inv(cov_hh))
+        added_mu=np.matmul(added_mu_A, dif_vec)
+        erg=mu_f+added_mu
         return erg
 
-    def conditioned_Sigma(self, Sigmas):
-        erg = {new_list: [] for new_list in range(len(Sigmas))}
-        for wlt in erg:
-            a=np.matmul(Sigmas[wlt]["fh"], np.linalg.inv(Sigmas[wlt]["hh"]))
-            second_mat=np.matmul(a, Sigmas[wlt]["hf"])
-            erg[wlt]=Sigmas[wlt]["ff"]-second_mat
-        return erg
-
-    def conditioned_pi(self, mu, Sigmas, x_h, pi):
-        erg={new_list: [] for new_list in range(len(Sigmas))}
-        vart = [multivariate_normal(mean=mu[qrt]["h"], cov=Sigmas[qrt]["hh"]).pdf(x_h) for qrt in range(0, len(erg))]
-        for wlt in erg:        # test=var.pdf([0, 0])
-            erg[wlt]=vart[wlt]/np.sum(vart)
+    def conditioned_Sigma(self):
+        mu_h, mu_f, cov_hh, cov_fh, cov_hf, cov_ff=self.get_small_pieces()
+        a=np.matmul(cov_fh, np.linalg.inv(cov_hh))
+        second_mat=np.matmul(a, cov_hf)
+        erg=cov_ff-second_mat
         return erg
 
     def set_mu_Sigmas(self, pi, mu, Sigmas):
-        obj_causal.set_mu(mu)
-        obj_causal.set_Sigma(Sigmas)
+        self.set_mu(mu)
+        self.set_Sigma(Sigmas)
 
     def check_matrices(self, Sigmas):
         for qrt in ["ff", "hf", "fh", "hh"]:
@@ -137,44 +139,25 @@ class causal_prob(object):
         is_posdef_vec = np.all([self.is_pos_definite(glob_matrices[wlt]) for wlt in range(0, len(glob_matrices))])
         bool_val = np.all([is_sym_vec, is_posdef_vec])
         None
+    def get_dataset(self, start_pos,end_pos):
+
+        xs, ys = np.random.multivariate_normal(start_pos['mu'], start_pos['Sigma'], 5000).T
+        xe, ye = np.random.multivariate_normal(end_pos['mu'], end_pos['Sigma'], 5000).T
+        d = {'xs': xs, 'ys': ys, 'xe': xe, 'ye': ye}
+        self.df = pd.DataFrame(data=d)
+        self.mean=np.array(self.df.mean())
+        self.cov=np.array(self.df.cov())
+        rt=self.is_pos_definite(self.cov)
+        if(rt==False):
+            warnings.warn("not positive definite")
 
 
-A=np.array([[1, 8, 3, 7], [5, 2, 6, 8], [3, 4, 2, 8], [1, 7, 3, 9]])
-cov=np.transpose(A)*A
-pi={0: .8, 1: .2}
-mu={0:
-        {"h": np.array([1, 2]),
-        "f": np.array([2, 3])},
-    1:
-        {"h": np.array([3, 4]),
-        "f": np.array([2, 3])}}
-
-Sigmas={0:
-            {"hh": np.array([[1, 0.3], [0.3, 1]]),
-            "hf": np.array([[1, 0.8], [0.8, 1]]),
-            "fh": np.array([[1, 0.8], [0.8, 1]]),
-            "ff": np.array([[1, 0.3], [0.3, 1]])},
-        1:
-           {"hh": np.array([[1, 0.6], [0.6, 1]]),
-            "hf": np.array([[1, 0.4], [0.4, 1]]),
-            "fh": np.array([[1, 0.4], [0.4, 1]]),
-            "ff": np.array([[1, 0.6], [0.6, 1]])}}
-
+start_pos={'mu': np.array([1, 2]), 'Sigma': np.array([[1, 0.3], [0.3, 1]])}
+end_pos={'mu': np.array([4, 4]), 'Sigma': np.array([[1, 0.5], [0.5, 1]])}
 
 obj_causal = causal_prob()
-
-rt=obj_causal.is_pos_definite(cov)
-obj_causal.check_matrices(Sigmas)
-obj_causal.get_all_global_matrices(Sigmas)
-
-new_mu=obj_causal.conditioned_mu(mu, Sigmas, np.array([8, 8]))
+obj_causal.get_dataset(start_pos,end_pos)
+new_mu=obj_causal.conditioned_mu(np.array([5, 8]))
 print(new_mu)
-new_Sigma=obj_causal.conditioned_Sigma(Sigmas)
+new_Sigma=obj_causal.conditioned_Sigma()
 print(new_Sigma)
-new_pi=obj_causal.conditioned_pi(mu, Sigmas, np.array([8, 8]), pi)
-print(new_pi)
-
-#obj_causal.set_mu_Sigmas(new_pi, new_mu, new_Sigma)
-#obj_causal.visualize_multivariate_gaussian()
-#obj_causal.plot_eigen_vectors_Sigma()
-#obj_causal.show()
