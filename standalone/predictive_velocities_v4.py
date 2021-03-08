@@ -69,6 +69,36 @@ class causal_prob(object):
         plt.grid()
         plt.show()
 
+    def mahalabonis_dist(self, x, mu, Sigma):
+        return -0.5*np.transpose(x-mu)*np.linalg.inv(Sigma)*(x-mu)
+    def multivariate_gaussian_distribution(self, x, mu, Sigma):
+        factor_A=1/np.sqrt((2*np.pi)**2*np.linalg.det(Sigma))
+        factor_B=np.exp(self.mahalabonis_dist(x, mu, Sigma))
+        erg=factor_A*factor_B
+        return erg[0]
+    def contour_plot(self):
+        NGRID = 40
+        X = np.linspace(-11, 11, NGRID)
+        Y = np.linspace(-11, 11, NGRID)
+        X, Y = np.meshgrid(X, Y)
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        Z = np.zeros((np.size(X, 0), np.size(X, 1)))
+        for idx_A in range(0, np.size(X, 0)):
+            for idx_B in range(0, np.size(X, 1)):
+                x = np.array([X[idx_A, idx_B], Y[idx_A, idx_B]])
+                for qrt in range(0, len(self.mean)):
+                    mu_h, mu_f, cov_hh, cov_fh, cov_hf, cov_ff = self.get_small_pieces(qrt)
+                    new_val=self.pi[qrt]*multivariate_normal(mean=mu_f, cov=cov_ff).pdf(x)
+                    Z[idx_A, idx_B] += new_val
+        # self.ax.plot_surface(self.X, self.Y, Z,  cmap='viridis',
+        #               linewidth=0, antialiased=False, alpha=.3)
+        ax.contour(X, Y, Z, 10, lw=3, cmap="autumn_r", linestyles="solid", offset=0)
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        plt.grid()
+        plt.show()
+
 
 
 start_pos={'mu': np.array([0, 0]), 'Sigma': np.array([[.4, 0], [0, .4]])}
@@ -88,3 +118,4 @@ print(new_Sigma)
 new_pi=obj_causal.conditioned_pi(vel, xh)
 print(new_pi)
 obj_causal.plot_the_scene()
+obj_causal.contour_plot()
