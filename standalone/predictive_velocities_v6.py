@@ -121,20 +121,19 @@ class causal_prob(object):
         plt.grid()
         plt.show()
 
+if __name__ == '__main__':
+    start_pos={'mu': np.array([0, 0]), 'Sigma': np.array([[.4, 0], [0, .4]])}
+    vel={0: {'pi':.6, 'mu': np.array([8, 8]), 'Sigma': np.array([[1, 0.5], [0.5, 1]])},
+         1:{'pi':.3, 'mu': np.array([-8, 2]), 'Sigma': np.array([[.4, -0.6], [-0.6, .4]])},
+         2: {'pi': .1, 'mu': np.array([1, -7]), 'Sigma': np.array([[.4, -0.6], [-0.6, .4]])}
+         }
 
-
-start_pos={'mu': np.array([0, 0]), 'Sigma': np.array([[.4, 0], [0, .4]])}
-vel={0: {'pi':.6, 'mu': np.array([8, 8]), 'Sigma': np.array([[1, 0.5], [0.5, 1]])},
-     1:{'pi':.3, 'mu': np.array([-8, 2]), 'Sigma': np.array([[.4, -0.6], [-0.6, .4]])},
-     2: {'pi': .1, 'mu': np.array([1, -7]), 'Sigma': np.array([[.4, -0.6], [-0.6, .4]])}
-     }
-
-params={'N': 600}
-xh=np.array([5, 5])
-obj_causal = causal_prob()
-obj_causal.get_dataset(params, start_pos,vel)
-obj_causal.do_xe_ye(params, {'mu': np.array([8, 0]), 'Sigma': np.array([[.4, 0], [0, .4]])})
-obj_causal.conditioning()
-xf_pred=obj_causal.predict(xh, vel)
-obj_causal.plot_the_scene()
-obj_causal.contour_plot()
+    params={'N': 600}
+    xh=np.array([5, 5])
+    obj_causal = causal_prob()
+    obj_causal.get_dataset(params, start_pos,vel)
+    obj_causal.do_xe_ye(params, {'mu': np.array([8, 0]), 'Sigma': np.array([[.4, 0], [0, .4]])})
+    obj_causal.conditioning()
+    xf_pred=obj_causal.predict(xh, vel)
+    obj_causal.plot_the_scene()
+    obj_causal.contour_plot()

@@ -71,7 +71,10 @@ class causal_prob(object):
     def plot_the_scene(self):
         fig = plt.figure()
         ax = fig.add_subplot()
-        ax.scatter(self.df['xs'], self.df['ys'], label='initial position', color='black')
+        three_col=["blue", "green", "red"]
+        for count, act_idx in enumerate(np.unique(self.df["idx"])):
+            new_dat=self.df.loc[self.df["idx"]==act_idx]
+            ax.scatter(new_dat['xs'], new_dat['ys'], label='initial position', color=three_col[count], alpha=.3)
         sel_col=['blue', 'green', 'red', 'cyan', 'orange', 'yellow']
         [ax.scatter(qrt['xe'], qrt['ye'], label=str(idx), color=sel_col[idx]) for idx, qrt in enumerate(self.sub_df)]
         ax.legend()
