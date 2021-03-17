@@ -90,6 +90,7 @@ class causal_prob(object):
                 'size': 16}
         ax.set_xlabel('x [m]', **font)
         ax.set_ylabel('y [m]', **font)
+        plt.axis([-12, 12, -12, 12])
         plt.grid()
         plt.show()
     def do_xe_ye(self, do_prob):
@@ -144,12 +145,48 @@ class causal_prob(object):
                 'size': 16}
         ax.set_xlabel('x [m]', **font)
         ax.set_ylabel('y [m]', **font)
+        plt.axis([-12, 12, -12, 12])
+        plt.grid()
+        plt.show()
+
+    def resulting_contour_plot(self, new_mu, new_sigma, new_pi):
+        NGRID = 40
+        X = np.linspace(-11, 11, NGRID)
+        Y = np.linspace(-11, 11, NGRID)
+        X, Y = np.meshgrid(X, Y)
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        Z = np.zeros((np.size(X, 0), np.size(X, 1)))
+        for idx_A in range(0, np.size(X, 0)):
+            for idx_B in range(0, np.size(X, 1)):
+                x = np.array([X[idx_A, idx_B], Y[idx_A, idx_B]])
+                for qrt in range(0, len(self.mean)):
+                    new_val=new_pi[qrt]*multivariate_normal(mean=new_mu[qrt], cov=new_sigma[qrt]).pdf(x)
+                    Z[idx_A, idx_B] += new_val
+        # self.ax.plot_surface(self.X, self.Y, Z,  cmap='viridis',
+        #               linewidth=0, antialiased=False, alpha=.3)
+        plt.arrow(xh[0], xh[1], new_mu[0][0]-xh[0], new_mu[0][1]-xh[1],
+                  fc="blue", ec="black", alpha=.5, width=new_pi[0]+.5,
+                  head_width=1.4, head_length=.63)
+        plt.arrow(xh[0], xh[1], new_mu[1][0] - xh[0], new_mu[1][1] - xh[1],
+                  fc="green", ec="black", alpha=.5, width=new_pi[1]+.5,
+                  head_width=1.4, head_length=.63)
+        plt.arrow(xh[0], xh[1], new_mu[2][0] - xh[0], new_mu[2][1] - xh[1],
+                  fc="red", ec="black", alpha=.5, width=new_pi[2]+.5,
+                  head_width=1.4, head_length=.63)
+        ax.contour(X, Y, Z, 10, lw=3, cmap="autumn_r", linestyles="solid", offset=0)
+        font = {'family': 'normal',
+                'weight': 'bold',
+                'size': 16}
+        ax.set_xlabel('x [m]', **font)
+        ax.set_ylabel('y [m]', **font)
+        plt.axis([-12, 12, -12, 12])
         plt.grid()
         plt.show()
 
 
 
-start_pos={'mu': np.array([0, 0]), 'Sigma': np.array([[.4, 0], [0, .4]])}
+start_pos={'mu': np.array([0, 0]), 'Sigma': np.array([[1, 0], [0, 1]])}
 vel={0: {'pi':.6, 'mu': np.array([8, 8]), 'Sigma': np.array([[1, 0.5], [0.5, 1]])},
      1:{'pi':.3, 'mu': np.array([-8, 2]), 'Sigma': np.array([[.4, -0.6], [-0.6, .4]])},
      2: {'pi': .1, 'mu': np.array([1, -7]), 'Sigma': np.array([[.4, -0.6], [-0.6, .4]])}
@@ -159,9 +196,10 @@ params={'N': 600}
 xh=np.array([0, 2])
 obj_causal = causal_prob()
 obj_causal.get_dataset(params, start_pos,vel)
-obj_causal.do_xe_ye({0: {'mu': np.array([8, 2]), 'Sigma': np.array([[1, 0], [0, 1]])},
-                             1: {'mu': np.array([8, 0]), 'Sigma': np.array([[1, 0], [0, 1]])},
-                             2: {'mu': np.array([8, -2]), 'Sigma': np.array([[1, 0], [0, 1]])}})
+obj_causal.do_xe_ye({0: {'mu': np.array([8, 2]), 'Sigma': np.array([[1.4, 0], [0, 1.4]])},
+                         1: {'mu': np.array([8, 0]), 'Sigma': np.array([[1.4, 0], [0, 1.4]])},
+                         2: {'mu': np.array([8, -2]), 'Sigma': np.array([[1.4, 0], [0, 1.4]])}})
 new_mu, new_sigma, new_pi=obj_causal.predict(xh, vel)
 obj_causal.plot_the_scene()
 obj_causal.contour_plot(xh, new_mu, new_pi)
+obj_causal.resulting_contour_plot(new_mu, new_sigma, new_pi)

@@ -86,6 +86,7 @@ class causal_prob(object):
                 'size': 16}
         ax.set_xlabel('x [m]', **font)
         ax.set_ylabel('y [m]', **font)
+        plt.axis([-12, 12, -12, 12])
         plt.grid()
         plt.show()
 
@@ -128,6 +129,7 @@ class causal_prob(object):
                 'size': 16}
         ax.set_xlabel('x [m]', **font)
         ax.set_ylabel('y [m]', **font)
+        plt.axis([-12, 12, -12, 12])
         plt.grid()
         plt.show()
 
@@ -162,6 +164,7 @@ class causal_prob(object):
                 'size': 16}
         ax.set_xlabel('x [m]', **font)
         ax.set_ylabel('y [m]', **font)
+        plt.axis([-12, 12, -12, 12])
         plt.grid()
         plt.show()
 
