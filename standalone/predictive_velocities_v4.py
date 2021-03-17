@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from scipy.stats import multivariate_normal
-
+from sklearn.cluster import KMeans
 class causal_prob(object):
     def __init__(self, **kwargs):
         None
@@ -57,7 +57,10 @@ class causal_prob(object):
     def get_dataset(self, params, start_pos,vel):
 
         xs, ys = np.random.multivariate_normal(start_pos['mu'], start_pos['Sigma'], params['N']).T
-        idx=np.random.choice(len(vel), params['N'], p=[vel[rqt]['pi'] for rqt in vel])
+        X=np.vstack((xs, ys))
+        kmeans = KMeans(n_clusters=len(vel), random_state=0).fit(X.T)
+        idx=kmeans.labels_
+        #idx=np.random.choice(len(vel), params['N'], p=[vel[rqt]['pi'] for rqt in vel])
         xe, ye=np.zeros((len(xs),)), np.zeros((len(ys),))
         for ix, qrt in enumerate(idx):
             vx, vy = np.random.multivariate_normal(vel[qrt]['mu'], vel[qrt]['Sigma'])
@@ -74,10 +77,15 @@ class causal_prob(object):
         three_col=["blue", "green", "red"]
         for count, act_idx in enumerate(np.unique(self.df["idx"])):
             new_dat=self.df.loc[self.df["idx"]==act_idx]
-            ax.scatter(new_dat['xs'], new_dat['ys'], label='initial position', color=three_col[count], alpha=.3)
+            ax.scatter(new_dat['xs'], new_dat['ys'], label='initial position '+ str(count), color=three_col[count], alpha=.3)
         sel_col=['blue', 'green', 'red', 'cyan', 'orange', 'yellow']
         [ax.scatter(qrt['xe'], qrt['ye'], label=str(idx), color=sel_col[idx]) for idx, qrt in enumerate(self.sub_df)]
         ax.legend()
+        font = {'family': 'normal',
+                'weight': 'bold',
+                'size': 16}
+        ax.set_xlabel('x [m]', **font)
+        ax.set_ylabel('y [m]', **font)
         plt.grid()
         plt.show()
 
@@ -115,8 +123,11 @@ class causal_prob(object):
                   fc="red", ec="black", alpha=.5, width=new_pi[2]+.5,
                   head_width=1.4, head_length=.63)
         ax.contour(X, Y, Z, 10, lw=3, cmap="autumn_r", linestyles="solid", offset=0)
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
+        font = {'family': 'normal',
+                'weight': 'bold',
+                'size': 16}
+        ax.set_xlabel('x [m]', **font)
+        ax.set_ylabel('y [m]', **font)
         plt.grid()
         plt.show()
 
@@ -146,22 +157,25 @@ class causal_prob(object):
                   fc="red", ec="black", alpha=.5, width=new_pi[2]+.5,
                   head_width=1.4, head_length=.63)
         ax.contour(X, Y, Z, 10, lw=3, cmap="autumn_r", linestyles="solid", offset=0)
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
+        font = {'family': 'normal',
+                'weight': 'bold',
+                'size': 16}
+        ax.set_xlabel('x [m]', **font)
+        ax.set_ylabel('y [m]', **font)
         plt.grid()
         plt.show()
 
 
 
 
-start_pos={'mu': np.array([0, 0]), 'Sigma': np.array([[.4, 0], [0, .4]])}
+start_pos={'mu': np.array([0, 0]), 'Sigma': np.array([[1, 0], [0, 1]])}
 vel={0: {'pi':.6, 'mu': np.array([8, 8]), 'Sigma': np.array([[1, 0.5], [0.5, 1]])},
      1:{'pi':.3, 'mu': np.array([-8, 2]), 'Sigma': np.array([[.4, -0.6], [-0.6, .4]])},
      2: {'pi': .1, 'mu': np.array([1, -7]), 'Sigma': np.array([[.4, -0.6], [-0.6, .4]])}
      }
 
-params={'N': 600}
-xh=np.array([4, 6])
+params={'N': 80}
+xh=np.array([0, 2])
 obj_causal = causal_prob()
 obj_causal.get_dataset(params, start_pos,vel)
 new_mu, new_sigma, new_pi=obj_causal.predict(xh, vel)
