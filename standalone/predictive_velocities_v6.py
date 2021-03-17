@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from scipy.stats import multivariate_normal
+from sklearn.cluster import KMeans
 
 class causal_prob(object):
     def __init__(self, **kwargs):
@@ -58,34 +59,52 @@ class causal_prob(object):
             all_val.append(vel[wlt]['pi']*multivariate_normal(mean=mu_h, cov=cov_hh).pdf(x_h))
         erg = {nl: all_val[nl]/np.sum(all_val) for nl in range(0, len(self.mean))}
         return erg
-    def get_dataset(self, params, start_pos,vel):
+
+    def get_dataset(self, params, start_pos, vel):
 
         xs, ys = np.random.multivariate_normal(start_pos['mu'], start_pos['Sigma'], params['N']).T
-        idx=np.random.choice(len(vel), params['N'], p=[vel[rqt]['pi'] for rqt in vel])
-        xe, ye=np.zeros((len(xs),)), np.zeros((len(ys),))
+        X = np.vstack((xs, ys))
+        kmeans = KMeans(n_clusters=len(vel), random_state=0).fit(X.T)
+        idx = kmeans.labels_
+        # idx=np.random.choice(len(vel), params['N'], p=[vel[rqt]['pi'] for rqt in vel])
+        xe, ye = np.zeros((len(xs),)), np.zeros((len(ys),))
         for ix, qrt in enumerate(idx):
             vx, vy = np.random.multivariate_normal(vel[qrt]['mu'], vel[qrt]['Sigma'])
-            xe[ix], ye[ix]=xs[ix]+vx, ys[ix]+vy
+            xe[ix], ye[ix] = xs[ix] + vx, ys[ix] + vy
         d = {'idx': idx, 'xs': xs, 'ys': ys, 'xe': xe, 'ye': ye}
         self.df = pd.DataFrame(data=d)
-        self.sub_df=[self.df.loc[self.df['idx'] == qrt].drop('idx', axis=1) for qrt in range(0, len(vel))]
-        self.mean=[np.array(self.sub_df[qrt].mean()) for qrt in range(0, len(self.sub_df))]
-        self.cov=[np.array(self.sub_df[qrt].cov()) for qrt in range(0, len(self.sub_df))]
-        self.pi=[vel[qrt]['pi'] for qrt in vel]
+        self.sub_df = [self.df.loc[self.df['idx'] == qrt].drop('idx', axis=1) for qrt in range(0, len(vel))]
+        self.mean = [np.array(self.sub_df[qrt].mean()) for qrt in range(0, len(self.sub_df))]
+        self.cov = [np.array(self.sub_df[qrt].cov()) for qrt in range(0, len(self.sub_df))]
+        self.pi = [vel[qrt]['pi'] for qrt in vel]
+
     def plot_the_scene(self):
         fig = plt.figure()
         ax = fig.add_subplot()
-        ax.scatter(self.df['xs'], self.df['ys'], label='initial position', color='black')
-        sel_col=['blue', 'green', 'red', 'cyan', 'orange', 'yellow']
+        three_col = ["blue", "green", "red"]
+        for count, act_idx in enumerate(np.unique(self.df["idx"])):
+            new_dat = self.df.loc[self.df["idx"] == act_idx]
+            ax.scatter(new_dat['xs'], new_dat['ys'], label='initial position ' + str(count), color=three_col[count],
+                       alpha=.3)
+        sel_col = ['blue', 'green', 'red', 'cyan', 'orange', 'yellow']
         [ax.scatter(qrt['xe'], qrt['ye'], label=str(idx), color=sel_col[idx]) for idx, qrt in enumerate(self.sub_df)]
         ax.legend()
+        font = {'family': 'normal',
+                'weight': 'bold',
+                'size': 16}
+        ax.set_xlabel('x [m]', **font)
+        ax.set_ylabel('y [m]', **font)
         plt.grid()
         plt.show()
-    def do_xe_ye(self, params, do_prob):
-        new_xe, new_ye = np.random.multivariate_normal(do_prob['mu'], do_prob['Sigma'], params['N']).T
-        self.df["xe"] = new_xe
-        self.df["ye"] = new_ye
-        #self.df["idx"] = 0
+
+    def do_xe_ye(self, do_prob):
+        for idx, qrt in enumerate(do_prob):
+            new_df = self.df.loc[self.df["idx"] == idx]
+            new_xe, new_ye = np.random.multivariate_normal(do_prob[qrt]['mu'], do_prob[qrt]['Sigma'],
+                                                           np.size(new_df, 0)).T
+            self.df.loc[self.df["idx"] == idx, "xe"] = new_xe
+            self.df.loc[self.df["idx"] == idx, "ye"] = new_ye
+        # self.df["idx"] = 0
         self.sub_df = [self.df.loc[self.df['idx'] == qrt].drop('idx', axis=1) for qrt in range(0, len(vel))]
         self.mean = [np.array(self.sub_df[qrt].mean()) for qrt in range(0, len(self.sub_df))]
         self.cov = [np.array(self.sub_df[qrt].cov()) for qrt in range(0, len(self.sub_df))]
@@ -132,7 +151,9 @@ if __name__ == '__main__':
     xh=np.array([5, 5])
     obj_causal = causal_prob()
     obj_causal.get_dataset(params, start_pos,vel)
-    obj_causal.do_xe_ye(params, {'mu': np.array([8, 0]), 'Sigma': np.array([[.4, 0], [0, .4]])})
+    obj_causal.do_xe_ye({0: {'mu': np.array([8, 2]), 'Sigma': np.array([[1, 0], [0, 1]])},
+                         1: {'mu': np.array([8, 0]), 'Sigma': np.array([[1, 0], [0, 1]])},
+                         2: {'mu': np.array([8, -2]), 'Sigma': np.array([[1, 0], [0, 1]])}})
     obj_causal.conditioning()
     xf_pred=obj_causal.predict(xh, vel)
     obj_causal.plot_the_scene()
