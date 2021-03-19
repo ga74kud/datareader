@@ -1,7 +1,7 @@
 from math import atan2, degrees
 from datareader.__init__ import *
 import matplotlib.pyplot as plt
-
+import pandas as pd
 ########################
 ### user preferences ###
 ########################
@@ -15,7 +15,9 @@ options={
         'opt_1':
             {"window": 71, "poly_order": 2},
         }
-
+font = {'family': 'normal',
+                'weight': 'bold',
+                'size': 16}
 val_A_window=options[selection_A]["window"]
 val_A_polyorder=options[selection_A]["poly_order"]
 
@@ -44,6 +46,7 @@ r, Y=get_dataset_by_column_value(X, "id", id)
 ### get arrays for velocity computation ###
 ###########################################
 rt,rx,ry=get_center_value(Y)
+
 #################################
 ### computation of velocities ###
 #################################
@@ -65,11 +68,10 @@ for wlt in range(0, len(diff_vel)):
         diff_vel[wlt]=np.mean(sel_window)
 ax1 = plt.subplot(211)
 ax1.plot(rt[:-1], naive_vel, label='naive_v')
-ax1.plot(rt, center_vel, label='v_'+str(val_A_window)+'_'+str(val_A_polyorder))
-ax1.fill_between(rt[1:], center_vel[1:] - diff_vel, center_vel[1:] + diff_vel, alpha=0.2, label="confidence")
+ax1.plot(rt, center_vel, label='v_'+str(val_A_window)+'_'+str(val_A_polyorder), linewidth=3)
+ax1.fill_between(rt[1:], center_vel[1:] - diff_vel, center_vel[1:] + diff_vel, alpha=.8, label="confidence", color="pink")
 ax1.legend()
-ax1.set_ylabel('Velocity')
-ax1.set_xlabel('Time')
+ax1.set_ylabel('Velocity', **font)
 ax1.grid(True)
 ax1.set_ylim([0,10])
 #ax2=ax1.twinx()
@@ -78,8 +80,8 @@ curvature=[round(degrees(atan2(vy_a[i], vx_a[i]))) for i in range(0, len(vx_a))]
 ax2.plot(rt, curvature, label="Curvature")
 ax2.set_ylim([-180,180])
 ax2.grid(True)
-ax2.set_ylabel('Angle in Degress Celsius (°C)')
-ax2.set_xlabel('Time')
+ax2.set_ylabel('Angle (°C)', **font)
+ax2.set_xlabel('Timestamp [-]', **font)
 ax2.legend()
 plt.show()
 
