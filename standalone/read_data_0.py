@@ -19,32 +19,19 @@ def read_whole_dataset():
     extrema_X=get_extrema(X)
     return X, extrema_X
 
-def plot_id_movement(id, X, **kwargs):
+def plot_id_movement(id, X, col="blue"):
     r, Y=get_dataset_by_column_value(X, "id", id)
     rt,rx,ry=get_center_value(Y)
-    plt.plot(rx, ry, label='ground')
+    plt.plot(rx, ry, color=col, alpha=.6)
 
 def show_plot(extrema_X):
     plt.axis(extrema_X)
     plt.legend()
     plt.show()
 
-
-
-
 fig, ax = plt.subplots(1, 1, figsize=(9, 9))
 
-
-
 X_All, extrema_X_All=read_whole_dataset()
-
-
-
-
-
-
-
-
 df = pd.read_pickle("./data.pkl")
 ref=df.iloc[0]
 
@@ -67,15 +54,9 @@ kmeans = KMeans(n_clusters=3, random_state=0).fit(X)
 centroids = kmeans.cluster_centers_
 plt.scatter(centroids[:, 0], centroids[:, 1], marker="x", s=169, linewidths=3,
             color="k", zorder=10, label="kmeans-center")
-for i in np.unique(kmeans.labels_):
-    rbt=(kmeans.labels_==i)
-    sel_idx=[idx for idx, iqt in enumerate(rbt) if iqt]
-    sel_X=X.loc[rbt]
-    act_mean=sel_X.mean()
-    rct=sel_X.cov()
-    x=sel_X["epx"].to_numpy()
-    y=sel_X["epy"].to_numpy()
-    plot_id_movement(0, X_All)
+col=["red", "blue", "green", "cyan"]
+for idx,wlt in enumerate(kmeans.labels_):
+    plot_id_movement(df["idx"].iloc[idx], X_All, col[wlt])
 
 plt.legend()
 font = {'family': 'normal',
